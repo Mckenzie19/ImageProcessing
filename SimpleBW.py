@@ -286,12 +286,19 @@ class SimpleBWImage(OOI):
           return pattern
                          
 
-data = makeTestData(10)
+data = makeTestImage()
 SBW1 = SimpleBWImage()
 
-def runTest():
-     SBW1.updateChildren(data[0], "square")
-     SBW1.children
+def runTest1():
+     SBW1.updateChildren(data, "square")
+     print(SBW1.children)
+
+dataSet = makeTestData(10)
+SBW2 = SimpleBWImage()
+
+def runTest2():
+     SBW2.updateChildren(dataSet[0], "square")
+     print(SBW2.children)
 
 
 
