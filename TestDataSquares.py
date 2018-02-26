@@ -28,20 +28,20 @@ def makeTestData(numSquares):
 
 
 def makeTestImage():
-    square = np.zeros((500,500))
+    square = np.zeros((50,50))
     for i in range(10,20):
         square[10][i] = 1
         square[11][i] = 1
 
-        square[20][i] = 1
         square[19][i] = 1
+        square[18][i] = 1
 
     for j in range(10,20):
         square[j][10] = 1
         square[j][11] = 1
 
-        square[j][20] = 1
         square[j][19] = 1
+        square[j][18] = 1
 
     return square
         
