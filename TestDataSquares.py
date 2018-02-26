@@ -27,30 +27,21 @@ def makeTestData(numSquares):
     return squares
 
 
-'''                    
-try:
-     pixSlope = (nextY - cPixels[-1][0])/(nextX - cPixels[-1][1])
-     if (pixSlope/shape[cShape]["equation"]) > unityLimit:
-          cPixels.append([nextY, nextX])
-          try:
-               shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-          except ZeroDivisionError:
-               shape[cShape]["equation"] = float('inf')
-     else:
-          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
-          shape[len(shape)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": 0}
-          cPixels = [[nextY, nextX]]
+def makeTestImage():
+    square = np.zeros((500,500))
+    for i in range(10,20):
+        square[10][i] = 1
+        square[11][i] = 1
 
-except ZeroDivisionError:
-     if abs(shape[cShape]["equation"]) > (1-unityLimit):
-          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
-          shape[len(shape)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": 0}
-          cPixels = [[nextY, nextX]]
-     else:
-          cPixels.append([nextY, nextX])
-          try:
-               shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-          except ZeroDivisionError:
-               shape[cShape]["equation"] = float('inf')
-'''
+        square[20][i] = 1
+        square[19][i] = 1
 
+    for j in range(10,20):
+        square[j][10] = 1
+        square[j][11] = 1
+
+        square[j][20] = 1
+        square[j][19] = 1
+
+    return square
+        
