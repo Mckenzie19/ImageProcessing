@@ -143,7 +143,7 @@ class SimpleBWImage(OOI):
           while not complete and count<(len(image)*4):
                nextY, nextX, direction = self.expand(image, x, y, focus, direction)
                for s in shape: #Makes sure that pixels are not analyzed twice
-                    if [nextY, nextX] == shape[s]["start"] or [nextY, nextX] == shape[s]["end"]:
+                    if s != cShape and ([nextY, nextX] == shape[s]["start"] or [nextY, nextX] == shape[s]["end"]):
                          complete = True
 
                if not complete:
@@ -167,8 +167,13 @@ class SimpleBWImage(OOI):
 
                     if failed == True:
                          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
+                         if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
+                              shape[cShape]["equation"] = float('inf')
+                         else:
+                              shape[cShape]["equation"] = (shape[cShape]["end"][0] - shape[cShape]["start"][0])/(shape[cShape]["end"][1] - shape[cShape]["start"][1])
                          shape[(len(shape)+1)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": 0}
                          cPixels = [[nextY, nextX]]
+                         cShape = len(shape)
 
 
                     y = nextY
@@ -205,14 +210,11 @@ class SimpleBWImage(OOI):
      '''
      def expand(self, image, x, y, focus, previousDirection):
           #Is there a more intelligent way to do this?
+          #Fix this - breaks at corners
 
-          right = [[x+1, y+1], [x+1, y], [x+1, y-1]]
-          left = [[x-1, y+1], [x-1, y], [x-1, y-1]]
-          down = [[x-1, y-1], [x, y-1], [x+1, y-1]]
-          up = [[x-1, y+1], [x, y+1], [x+1, y+1]]
-
-          if previousDirection != "left":
-               #Looking right
+          #Looking right
+          if previousDirection != "left" and (x+1)<len(image[y]):
+               right = [[x+1, y+1], [x+1, y], [x+1, y-1]]
                rightPOI = [self.isPOI([x+1, y+1], image, focus), self.isPOI([x+1, y], image, focus), self.isPOI([x+1, y-1], image, focus)]
                if True in rightPOI:
                     if False in rightPOI: #If there are no non-POI, then there are no border pixels to grab
@@ -225,8 +227,9 @@ class SimpleBWImage(OOI):
                          else:
                               return right[0][1], right[0][0], "right"
 
-          if previousDirection != "right":
-               #Looking left
+          #Looking left
+          if previousDirection != "right" and (x-1)>=0:
+               left = [[x-1, y+1], [x-1, y], [x-1, y-1]]
                leftPOI = [self.isPOI([x-1, y+1], image, focus), self.isPOI([x-1, y], image, focus), self.isPOI([x-1, y-1], image, focus)]
                if True in leftPOI:
                     if False in leftPOI: #If there are no non-POI, then there are no border pixels to grab
@@ -239,8 +242,9 @@ class SimpleBWImage(OOI):
                          else:
                               return left[0][1], left[0][0], "left"
 
-          if previousDirection != "up":
-               #Looking down
+          #Looking down
+          if previousDirection != "up" and (y-1)>=0:
+               down = [[x-1, y-1], [x, y-1], [x+1, y-1]]
                downPOI = [self.isPOI([x-1, y-1], image, focus), self.isPOI([x, y-1], image, focus), self.isPOI([x+1, y-1], image, focus)]
                if True in downPOI:
                     if False in downPOI: #If there are no non-POI, then there are no border pixels to grab
@@ -252,10 +256,10 @@ class SimpleBWImage(OOI):
                               return down[1][1], down[1][0], "down"
                          else:
                               return down[0][1], down[0][0], "down"
-          
 
-          if previousDirection != "down":
-               #Looking up
+          #Looking up
+          if previousDirection != "down" and (y+1)<len(image):
+               up = [[x-1, y+1], [x, y+1], [x+1, y+1]]
                upPOI = [self.isPOI([x-1, y+1], image, focus), self.isPOI([x, y+1], image, focus), self.isPOI([x+1, y+1], image, focus)]
                if True in upPOI:
                     if False in upPOI: #If there are no non-POI, then there are no border pixels to grab
@@ -267,6 +271,8 @@ class SimpleBWImage(OOI):
                               return up[1][1], up[1][0], "up"
                          else:
                               return up[0][1], up[0][0], "up"
+
+          return y, x, "Same"
 
 
 
