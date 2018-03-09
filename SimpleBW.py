@@ -20,6 +20,21 @@ class OOI: #ObjectOfInterest
      def getPattern(self):
           return self.pattern
 
+
+
+     #Takes in two patterns, and returns the list of index pairs that results in the most agreement between the elements
+     #It is assumed that items within nested lists are in absolute order
+     def alignPatterns(self, patt1, patt2):
+          aWeight = 0
+          agreementTotal = 0
+
+          
+
+
+
+
+
+
      def findMatchRatio(self, patt1, patt2):
           matchWeight = 0
           matchTotal = 0
@@ -157,14 +172,22 @@ class SimpleBWImage(OOI):
                     #Catches the case where both slopes are infinity as well as checking how close to parallel the lines are
                     failed = True
                     if shape[cShape]["equation"] == 0 and abs(pixSlope) <= (1-unityLimit):
-                         if pixSlope == shape[cShape]["equation"] or abs(pixSlope/shape[cShape]["equation"]) >= unityLimit:
-                              failed = False
-                              cPixels.append([nextY, nextX])
-                              try:
-                                   shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-                              except ZeroDivisionError:
-                                   shape[cShape]["equation"] = float('inf')
+                         failed = False
+                         cPixels.append([nextY, nextX])
+                         try:
+                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
+                         except ZeroDivisionError:
+                              shape[cShape]["equation"] = float('inf') 
+                    
+                    elif shape[cShape]["equation"] != 0 and (pixSlope == shape[cShape]["equation"] or abs(pixSlope/shape[cShape]["equation"]) >= unityLimit):
+                         failed = False
+                         cPixels.append([nextY, nextX])
+                         try:
+                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
+                         except ZeroDivisionError:
+                              shape[cShape]["equation"] = float('inf') 
 
+                         
                     if failed == True:
                          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
                          if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
