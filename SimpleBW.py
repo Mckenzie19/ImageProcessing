@@ -182,10 +182,6 @@ class SimpleBWImage(OOI):
                          elif ((pixSlope-shape[cShape]["equation"])/abs(shape[cShape]["equation"]) <= unityLimit):
                               #print("Line 182")
                               failed = False
-
-                    #print(shape[cShape]["equation"])
-
-                    #print(shape[cShape]["equation"] is float('inf'))
                       
                     if failed == True:
                          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
@@ -208,7 +204,6 @@ class SimpleBWImage(OOI):
                     x = nextX
                     count += 1
 
-          print(shape)
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
      
           return newPatt
@@ -326,14 +321,6 @@ SBW1 = SimpleBWImage()
 def runTest1():
      SBW1.updateChildren(data, "square")
      print(SBW1.children)
-
-dataSet = makeTestData(10)
-SBW2 = SimpleBWImage()
-
-def runTest2():
-     SBW2.updateChildren(dataSet[0], "square")
-     print(SBW2.children)
-
 
 
 
