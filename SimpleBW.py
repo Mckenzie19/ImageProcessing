@@ -27,12 +27,7 @@ class OOI: #ObjectOfInterest
      def alignPatterns(self, patt1, patt2):
           aWeight = 0
           agreementTotal = 0
-
-          
-
-
-
-
+          pass   
 
 
      def findMatchRatio(self, patt1, patt2):
@@ -149,13 +144,14 @@ class SimpleBWImage(OOI):
      #is considered to be a new "part" of the object
      def analyzeImage(self, image, focus, unityLimit):
           y, x = self.findPOI(image, focus)
-          shape = {1: {"start": [y, x], "end": [y, x], "equation": 0}} #Holds information on the different parts of the image
+          shape = {1: {"start": [y, x], "end": [y, x], "equation": None}} #Holds information on the different parts of the image
           cShape = 1
+          #Can we just save the previous pixel instead of all of the pixels in the current part?
           cPixels = [[y,x]] #Holds pixels of the active part
           complete = False
           count = 0
           direction = None
-          while not complete and count<(len(image)*4):
+          while not complete and count<(len(image)*10): #Extra condition to make sure no infinite loops at the moment. Fix later
                nextY, nextX, direction = self.expand(image, x, y, focus, direction)
                for s in shape: #Makes sure that pixels are not analyzed twice
                     if s != cShape and ([nextY, nextX] == shape[s]["start"] or [nextY, nextX] == shape[s]["end"]):
@@ -167,37 +163,46 @@ class SimpleBWImage(OOI):
                     try:
                          pixSlope = (nextY - cPixels[-1][0])/(nextX - cPixels[-1][1])
                     except ZeroDivisionError:
-                         pixSlope = float('inf')
+                         pixSlope = float('inf') #Vertical Lines
 
-                    #Catches the case where both slopes are infinity as well as checking how close to parallel the lines are
+                    #Checks if the slope between the current pixel and the previous pixel match the total slope of the current part
                     failed = True
-                    if shape[cShape]["equation"] == 0 and abs(pixSlope) <= (1-unityLimit):
+                    if shape[cShape]["equation"] == None:
                          failed = False
-                         cPixels.append([nextY, nextX])
-                         try:
-                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-                         except ZeroDivisionError:
-                              shape[cShape]["equation"] = float('inf') 
-                    
-                    elif shape[cShape]["equation"] != 0 and (pixSlope == shape[cShape]["equation"] or abs(pixSlope/shape[cShape]["equation"]) >= unityLimit):
+                    elif shape[cShape]["equation"] == 0 and abs(pixSlope) <= unityLimit:
                          failed = False
-                         cPixels.append([nextY, nextX])
-                         try:
-                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-                         except ZeroDivisionError:
-                              shape[cShape]["equation"] = float('inf') 
+                    elif shape[cShape]["equation"] == float('inf') or shape[cShape]["equation"] != 0:
+                         #print("Line 172")
+                         if pixSlope == shape[cShape]["equation"]:
+                             # print("Line 176")
+                              failed = False
+                         elif (shape[cShape]["equation"] == float('inf')) and (pixSlope >= (1-unityLimit)*((cPixels[-1][0]-0.99999*shape[cShape]["start"][0])/(cPixels[-1][1] - 0.99999*shape[cShape]["start"][1]))):
+                              #print("Line 179")
+                              failed = False
+                         elif ((pixSlope-shape[cShape]["equation"])/abs(shape[cShape]["equation"]) <= unityLimit):
+                              #print("Line 182")
+                              failed = False
 
-                         
+                    #print(shape[cShape]["equation"])
+
+                    #print(shape[cShape]["equation"] is float('inf'))
+                      
                     if failed == True:
                          shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
                          if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
                               shape[cShape]["equation"] = float('inf')
                          else:
                               shape[cShape]["equation"] = (shape[cShape]["end"][0] - shape[cShape]["start"][0])/(shape[cShape]["end"][1] - shape[cShape]["start"][1])
-                         shape[(len(shape)+1)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": 0}
+                         shape[(len(shape)+1)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": None}
                          cPixels = [[nextY, nextX]]
                          cShape = len(shape)
-
+                    else:
+                         cPixels.append([nextY, nextX])
+                         try:
+                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
+                         except ZeroDivisionError:
+                              shape[cShape]["equation"] = float('inf') 
+                         
 
                     y = nextY
                     x = nextX
