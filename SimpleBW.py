@@ -1,6 +1,7 @@
 import math
 from TestDataSquares import *
-
+import numpy as np
+np.set_printoptions(threshold=np.nan)
 
 '''
 Assuming that the image file has been uploaded as aa array of pixels with their
@@ -151,12 +152,16 @@ class SimpleBWImage(OOI):
           complete = False
           count = 0
           direction = None
+
+          testPrint = False
+          
           while not complete and count<(len(image)*10): #Extra condition to make sure no infinite loops at the moment. Fix later
                nextY, nextX, direction = self.expand(image, x, y, focus, direction)
                for s in shape: #Makes sure that pixels are not analyzed twice
                     if s != cShape and ([nextY, nextX] == shape[s]["start"] or [nextY, nextX] == shape[s]["end"]):
                          complete = True
-
+                    
+               failed = True
                if not complete:
                     #Check continuity between current pixel and previous pixels
                     #Create a way to adjust the "vision" of comparison (how far back should comparisons go?)
@@ -166,44 +171,42 @@ class SimpleBWImage(OOI):
                          pixSlope = float('inf') #Vertical Lines
 
                     #Checks if the slope between the current pixel and the previous pixel match the total slope of the current part
-                    failed = True
                     if shape[cShape]["equation"] == None:
                          failed = False
                     elif shape[cShape]["equation"] == 0 and abs(pixSlope) <= unityLimit:
                          failed = False
                     elif shape[cShape]["equation"] == float('inf') or shape[cShape]["equation"] != 0:
-                         #print("Line 172")
+                         
                          if pixSlope == shape[cShape]["equation"]:
-                             # print("Line 176")
                               failed = False
                          elif (shape[cShape]["equation"] == float('inf')) and (pixSlope >= (1-unityLimit)*((cPixels[-1][0]-0.99999*shape[cShape]["start"][0])/(cPixels[-1][1] - 0.99999*shape[cShape]["start"][1]))):
-                              #print("Line 179")
                               failed = False
                          elif ((pixSlope-shape[cShape]["equation"])/abs(shape[cShape]["equation"]) <= unityLimit):
-                              #print("Line 182")
                               failed = False
                       
-                    if failed == True:
-                         shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
-                         if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
-                              shape[cShape]["equation"] = float('inf')
-                         else:
-                              shape[cShape]["equation"] = (shape[cShape]["end"][0] - shape[cShape]["start"][0])/(shape[cShape]["end"][1] - shape[cShape]["start"][1])
+               if failed or complete:
+                    shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
+                    if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
+                         shape[cShape]["equation"] = float('inf')
+                    else:
+                         shape[cShape]["equation"] = (shape[cShape]["end"][0] - shape[cShape]["start"][0])/(shape[cShape]["end"][1] - shape[cShape]["start"][1])
+                    if not complete:
                          shape[(len(shape)+1)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": None}
                          cPixels = [[nextY, nextX]]
                          cShape = len(shape)
-                    else:
-                         cPixels.append([nextY, nextX])
-                         try:
-                              shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
-                         except ZeroDivisionError:
-                              shape[cShape]["equation"] = float('inf') 
+               else:
+                    cPixels.append([nextY, nextX])
+                    try:
+                         shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
+                    except ZeroDivisionError:
+                         shape[cShape]["equation"] = float('inf')
+
                          
+               y = nextY
+               x = nextX
+               count += 1
 
-                    y = nextY
-                    x = nextX
-                    count += 1
-
+          print(shape)
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
      
           return newPatt
