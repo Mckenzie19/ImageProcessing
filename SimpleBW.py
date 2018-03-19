@@ -10,13 +10,11 @@ This should be changed to a more applicable number scale later on.
 
 
 TO DO:
--Finish writing preliminary alignPatterns function
 -Update Shape object structure in analyzeImage to create an absolute order of angle sets in resulting pattern
 -Decide how alignPatterns should handle patterns that contain different numbers of parts / elements
--Replace findMatchRatio with alignPatterns
--Clean-up updateChildren function - edit the way weights are used
 -Look into better ways to determine "completeness" of image analysis in analyzeImage
 -Adjust analyzeImage to understand curves
+-There is a lot of deep dictionary calls going on - see if this can be reduced
 
 '''
 
@@ -97,7 +95,7 @@ class SimpleBWImage(OOI):
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
-               matchRatio = self.findMatchRatio(self.children[child], imagePattern)
+               matchRatio, childPattern = self.alignPatterns(self.children[child], imagePattern)
                if matchRatio >= bestRatio:
                     bestRatio = matchRatio
                     bestChild = child
@@ -120,16 +118,15 @@ class SimpleBWImage(OOI):
                else:
                     self.children[childName][1][0] = self.children[childName][1][0] - (imagePattern[0]/self.children[childName][0])
 
-               angleSetPairs = self.patternMatch(imagePattern[1], self.children[childName][1][1]) #Matches which sets of angles are the closest matches to each other
 
-               #Adjusts each angle within the list of angles (assumed that within a single angle set, each angle is in a fixed order)
-               for anglePair in angleSetPairs:
-                    for angle in self.children[childName][1][1][anglePair[1]]:
-                         if self.children[childName][1][1][anglePair[1]][angle] > imagePattern[1][anglePair[0]][angle]:
-                              self.children[childName][1][1][anglePair[1]][angle] = self.children[childName][1][1][anglePair[1]][angle] + (imagePattern[1][anglePair[0]][angle]/self.children[childName][0])
-                         else:
-                              self.children[childName][1][1][anglePair[1]][angle] = self.children[childName][1][1][anglePair[1]][angle] - (imagePattern[1][anglePair[0]][angle]/self.children[childName][0])
+               matchRatio, IMAngles = self.alignPatterns(imagePattern[1], self.children[childName][1][1])
+               #Assuming number of parts is the same
+               for i in range(len(IMAngles)):
+                    for j in range(len(IMAngles[i]))
+                         diffRatio = (self.children[childName][1][i][j] - IMAngles[i][j]) / abs(IMAngles[i][j])
+                         self.children[childName][1][i][j] += (self.children[childName][1][i][j]*(diffRatio/self.children[childName][0])) #Change the angle by the percent difference in angles divided by the total weight of the pattern 
 
+               
           return
           
 
