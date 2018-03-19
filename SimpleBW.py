@@ -1,4 +1,5 @@
 import math
+import itertools
 from TestDataSquares import *
 
 '''
@@ -32,60 +33,40 @@ class OOI: #ObjectOfInterest
 
 
 
-     #Takes in two patterns, and returns the list of index pairs that results in the most agreement between the elements
-     #It is assumed that items within nested lists are in absolute order - Shape dictionary in analyzeImage() needs to be altered to reflect this
+     #Takes in two patterns, and returns the permuatation of the first pattern that results in the most agreement between the elements
+     #Patterns given to function with format: [number of parts, [angleSet1, angleSet2, ...]], where angleSetN is a list of angles pertaining to a specific part
+     #It is assumed that items within angleSets are in absolute order - Shape dictionary in analyzeImage() needs to be altered to reflect this
      #Currently assumes that each angle set has the same number of parts - FIX THIS
      #Assumes each element is either a list or a float
      def alignPatterns(self, patt1, patt2):
-          aWeight = 0
-          agreementTotal = 0
+          bestRatio = float('inf')
+          bestPerm = None
+          #Since number of parts will currently be assumed to be the same, only need to check permutations of one of the angleSets
+          for test in itertools.permutations(patt1[1]):
+               totalMatch = 0
+               for i in range(len(test)):
+                    as1 = test[i]
+                    as2 = patt2[1][i]
+                    setMatch = 0
+                    weight = len(as1)
+                    for j in range(weight):
+                         if as1[j] != 0:
+                              setMatch += (as2[j] - as1[j])/abs(as1[j])
+                         else:
+                              setMatch += (as2[j] - 0.000001)/0.000001 #Check to make sure this is an okay approximation
+
+                    setRatio = setMatch / weight
+                    totalMatch += setRatio
+
+               testRatio = totalMatch / (len(test)+1) #Since the assumption is that the number of parts are the same, their difference is zero
+               if testRatio < bestRatio:
+                    bestRatio = testRatio
+                    bestPerm = test
+
+          return bestRatio, bestPerm
+               
           
-           
-
-
-     def findMatchRatio(self, patt1, patt2):
-          matchWeight = 0
-          matchTotal = 0
-
-          index = 0
-          #Deconstructs patterns as it goes
-          while len(patt1)>=0 or len(patt2)>=0:
-               #Find most similar item in patt2
-               match = 0
-               matchIndex = 0
-               if len(patt1) != 0 and len(patt2) != 0:
-                    for itemIndex in range(len(patt2)):
-                         partMatch = 0
-                         
-                         if isinstance(patt2[itemIndex], list) and isinstance(patt1[index], list):
-                              if len(patt2[itemIndex]) == len(patt1[index]):
-                                   for i in range(len(patt2[itemIndex])):
-                                        partMatch += patt2[itemIndex][i] / patt1[index][i]
-
-                                   partMatch /= len(patt2[itemIndex])
-
-                         elif isinstance(patt2[itemIndex], float) and isinstance(patt1[index], float):
-                              partMatch = patt2[itemIndex]/patt1[index]
-
-                         if partMatch > match:
-                              match = partMatch
-                              matchIndex = itemIndex
-
-                         patt2.remove(patt2[matchIndex])
-                         patt1.remove(patt1[index])
-
-               matchWeight += 1
-               matchTotal += match
-               index += 1
-
-          matchRatio = matchTotal/matchWeight
-
-          return matchRatio
-
-               
-                      
-               
-
+          
 '''
 Simple Black and White Image (Single object images)
 
