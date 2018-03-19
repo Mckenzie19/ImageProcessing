@@ -1,13 +1,22 @@
 import math
 from TestDataSquares import *
-import numpy as np
-np.set_printoptions(threshold=np.nan)
 
 '''
 Assuming that the image file has been uploaded as aa array of pixels with their
 value equalling the color stored in it. Current calculations assume
 that images are in grayscale, and that each pixel has an intensity between 0 and 1.
 This should be changed to a more applicable number scale later on.
+
+
+TO DO:
+-Finish writing preliminary alignPatterns function
+-Update Shape object structure in analyzeImage to create an absolute order of angle sets in resulting pattern
+-Decide how alignPatterns should handle patterns that contain different numbers of parts / elements
+-Replace findMatchRatio with alignPatterns
+-Clean-up updateChildren function - edit the way weights are used
+-Look into better ways to determine "completeness" of image analysis in analyzeImage
+-Adjust analyzeImage to understand curves
+
 '''
 
 class OOI: #ObjectOfInterest
@@ -24,11 +33,14 @@ class OOI: #ObjectOfInterest
 
 
      #Takes in two patterns, and returns the list of index pairs that results in the most agreement between the elements
-     #It is assumed that items within nested lists are in absolute order
+     #It is assumed that items within nested lists are in absolute order - Shape dictionary in analyzeImage() needs to be altered to reflect this
+     #Currently assumes that each angle set has the same number of parts - FIX THIS
+     #Assumes each element is either a list or a float
      def alignPatterns(self, patt1, patt2):
           aWeight = 0
           agreementTotal = 0
-          pass   
+          
+           
 
 
      def findMatchRatio(self, patt1, patt2):
@@ -100,7 +112,7 @@ class SimpleBWImage(OOI):
 
      def identifyImage(self, image, focus = 0.5, unityLimit = 0.8, proxRatio = 0.8):
           imagePattern = self.analyzeImage(image, focus, unityLimit)
-          bestRatio = 0
+          bestRatio = 0.0
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
@@ -110,9 +122,9 @@ class SimpleBWImage(OOI):
                     bestChild = child
 
           if bestRatio >= proxRatio:
-               return bestChild
+               return bestChild, bestRatio
           else:
-               return None
+               return None, 0.0
 
 
      #Each pattern needs a certain weight to it, so that "new" patterns are changed more by new inputs, while old patterns are changed less
@@ -298,12 +310,12 @@ class SimpleBWImage(OOI):
                          else:
                               return up[0][1], up[0][0], "up"
 
-          return y, x, "Same"
+          return y, x, previousDirection
 
 
 
      def setRelations(self, shape): #What criteria are necessary to identify shapes?
-          pattern = [0, []] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
+          pattern = [] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
           for s1 in shape:
                angles = []
                #Calculates the angle between any two lines (fix this to create a relation between curves)
@@ -312,9 +324,8 @@ class SimpleBWImage(OOI):
                          angle = math.atan(shape[s1]["equation"])-math.atan(shape[s2]["equation"])
                          angles.append(angle)
                          
-               pattern[1].append(angles)
+               pattern.append(angles)
 
-          pattern[0] = len(pattern[1])
           return pattern
                          
 
@@ -325,8 +336,17 @@ def runTest1():
      SBW1.updateChildren(data, "square")
      print(SBW1.children)
 
+dataSet = makeTestData(50)
+def runTest2():
+     for i in range(0, 45):
+          SBW1.updateChildren(dataSet[i], "square")
+
+     for i in range(45, 50):
+          print(SBW1.identifyImage(dataSet[i]))
 
 
+
+     
 
 
 
