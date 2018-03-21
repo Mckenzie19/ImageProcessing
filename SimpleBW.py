@@ -15,13 +15,17 @@ TO DO:
 -Look into better ways to determine "completeness" of image analysis in analyzeImage
 -Adjust analyzeImage to understand curves
 -There is a lot of deep dictionary calls going on - see if this can be reduced
+-Switch self.children and self.parent to object/node calling
+-Confirm data output
 
 '''
 
 class OOI: #ObjectOfInterest
 
-     def __init__(self, parents = None, children = None, pattern = None):
-          self.parents = parents
+     def __init__(self, identifier = None, parents = None, pattern = None, weight = 0, children = None):
+          self.identifier = identifier
+          self.weight = weight
+          self.parents = parents #Parents and Children should follow the form: {identifier: object}
           self.children = children
           self.pattern = pattern
 
@@ -32,19 +36,18 @@ class OOI: #ObjectOfInterest
 
 
      #Takes in two patterns, and returns the permuatation of the first pattern that results in the most agreement between the elements
-     #Patterns given to function with format: [number of parts, [angleSet1, angleSet2, ...]], where angleSetN is a list of angles pertaining to a specific part
-     #It is assumed that items within angleSets are in absolute order - Shape dictionary in analyzeImage() needs to be altered to reflect this
+     #Patterns given to function with format: [number of parts, angleSet1, angleSet2, ..., angleSetN], where angleSetN is a list of angles pertaining to a specific part
      #Currently assumes that each angle set has the same number of parts - FIX THIS
      #Assumes each element is either a list or a float
      def alignPatterns(self, patt1, patt2):
           bestRatio = float('inf')
           bestPerm = None
           #Since number of parts will currently be assumed to be the same, only need to check permutations of one of the angleSets
-          for test in itertools.permutations(patt1[1]):
+          for test in itertools.permutations(patt1[1:]):
                totalMatch = 0
                for i in range(len(test)):
                     as1 = test[i]
-                    as2 = patt2[1][i]
+                    as2 = patt2[i+1]
                     setMatch = 0
                     weight = len(as1)
                     for j in range(weight):
@@ -57,7 +60,7 @@ class OOI: #ObjectOfInterest
                     totalMatch += setRatio
 
                testRatio = totalMatch / (len(test)+1) #Since the assumption is that the number of parts are the same, their difference is zero
-               if testRatio < bestRatio:
+               if testRatio <= bestRatio:
                     bestRatio = testRatio
                     bestPerm = test
 
@@ -81,8 +84,9 @@ Functions:
 '''
 class SimpleBWImage(OOI):
 
-     def __init__(self, parents = {}, children = {}, pattern = []):
-          super().__init__(parents, children, pattern)
+     def __init__(self, identifier = None, parents = {}, pattern = [], weight = 0, children = {}):
+          super().__init__(identifier, parents, pattern, weight, children)
+          
 
 
      def updatePattern(self, image, focus = 0.5, unityLimit = 0.8):
@@ -95,7 +99,7 @@ class SimpleBWImage(OOI):
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
-               matchRatio, childPattern = self.alignPatterns(self.children[child], imagePattern)
+               matchRatio, childPattern = self.alignPatterns(self.children[child].pattern, imagePattern)
                if matchRatio >= bestRatio:
                     bestRatio = matchRatio
                     bestChild = child
@@ -110,21 +114,22 @@ class SimpleBWImage(OOI):
      def updateChildren(self, image, childName, focus = 0.5, unityLimit = 0.8):
           imagePattern = self.analyzeImage(image, focus, unityLimit)
           if childName not in self.children:
-               self.children[childName] = [1, imagePattern] #Follows format [weight, pattern]
+               #Currently using objects to store information. Find a way to generalize this.
+               newChild = SimpleBWImage(childName, {self.identifier: self}, imagePattern, 1)
+               self.children[childName] = newChild
           else:
-               self.children[childName][0] += 1 #Increases weight of pattern by 1
-               if imagePattern[0] > self.children[childName][1][0]: #Checks number of parts in each pattern
-                    self.children[childName][1][0] = self.children[childName][1][0] + (imagePattern[0]/self.children[childName][0])
-               else:
-                    self.children[childName][1][0] = self.children[childName][1][0] - (imagePattern[0]/self.children[childName][0])
-
-
-               matchRatio, IMAngles = self.alignPatterns(imagePattern[1], self.children[childName][1][1])
+               self.children[childName].weight += 1 #Increases weight of pattern by 1
+          
+               matchRatio, IMAngles = self.alignPatterns(imagePattern, self.children[childName].pattern)
                #Assuming number of parts is the same
                for i in range(len(IMAngles)):
-                    for j in range(len(IMAngles[i]))
-                         diffRatio = (self.children[childName][1][i][j] - IMAngles[i][j]) / abs(IMAngles[i][j])
-                         self.children[childName][1][i][j] += (self.children[childName][1][i][j]*(diffRatio/self.children[childName][0])) #Change the angle by the percent difference in angles divided by the total weight of the pattern 
+                    for j in range(len(IMAngles[i])):
+                         try:
+                              diffRatio = (self.children[childName].pattern[i+1][j] - IMAngles[i][j]) / abs(IMAngles[i][j])
+                         except ZeroDivisionError:
+                              diffRatio = (self.children[childName].pattern[i+1][j] - 0.000001) / 0.000001
+                              
+                         self.children[childName].pattern[i+1][j] += (self.children[childName].pattern[i+1][j]*(diffRatio/self.children[childName].weight)) #Change the angle by the percent difference in angles divided by the total weight of the pattern 
 
                
           return
@@ -135,20 +140,18 @@ class SimpleBWImage(OOI):
      #is considered to be a new "part" of the object
      def analyzeImage(self, image, focus, unityLimit):
           y, x = self.findPOI(image, focus)
-          shape = {1: {"start": [y, x], "end": [y, x], "equation": None}} #Holds information on the different parts of the image
-          cShape = 1
+          shape = [[(y,x),(y,x), None]] #Holds information on the different parts of the image
+          cShape = 0
           #Can we just save the previous pixel instead of all of the pixels in the current part?
-          cPixels = [[y,x]] #Holds pixels of the active part
+          cPixels = [(y,x)] #Holds pixels of the active part
           complete = False
           count = 0
           direction = None
-
-          testPrint = False
           
-          while not complete and count<(len(image)*10): #Extra condition to make sure no infinite loops at the moment. Fix later
+          while not complete and count<(len(image)*10): #Extra condition to make sure no infinite loops at the moment. FIXME
                nextY, nextX, direction = self.expand(image, x, y, focus, direction)
-               for s in shape: #Makes sure that pixels are not analyzed twice
-                    if s != cShape and ([nextY, nextX] == shape[s]["start"] or [nextY, nextX] == shape[s]["end"]):
+               for s in range(len(shape)): #Makes sure that pixels are not analyzed twice
+                    if s != cShape and ((nextY, nextX) == shape[s][0] or (nextY, nextX) == shape[s][1]):
                          complete = True
                     
                failed = True
@@ -161,56 +164,55 @@ class SimpleBWImage(OOI):
                          pixSlope = float('inf') #Vertical Lines
 
                     #Checks if the slope between the current pixel and the previous pixel match the total slope of the current part
-                    if shape[cShape]["equation"] == None:
+                    if shape[cShape][2] == None:
                          failed = False
-                    elif shape[cShape]["equation"] == 0 and abs(pixSlope) <= unityLimit:
+                    elif shape[cShape][2] == 0 and abs(pixSlope) <= unityLimit:
                          failed = False
-                    elif shape[cShape]["equation"] == float('inf') or shape[cShape]["equation"] != 0:
+                    elif shape[cShape][2] == float('inf') or shape[cShape][2] != 0:
                          
-                         if pixSlope == shape[cShape]["equation"]:
+                         if pixSlope == shape[cShape][2]:
                               failed = False
-                         elif (shape[cShape]["equation"] == float('inf')) and (pixSlope >= (1-unityLimit)*((cPixels[-1][0]-0.99999*shape[cShape]["start"][0])/(cPixels[-1][1] - 0.99999*shape[cShape]["start"][1]))):
+                         elif (shape[cShape][2] == float('inf')) and (pixSlope >= (1-unityLimit)*((cPixels[-1][0]-0.99999*shape[cShape][0][0])/(cPixels[-1][1] - 0.99999*shape[cShape][0][1]))):
                               failed = False
-                         elif ((pixSlope-shape[cShape]["equation"])/abs(shape[cShape]["equation"]) <= unityLimit):
+                         elif ((pixSlope-shape[cShape][2])/abs(shape[cShape][2]) <= unityLimit):
                               failed = False
                       
                if failed or complete:
-                    shape[cShape]["end"] = [cPixels[-1][0], cPixels[-1][1]]
-                    if (shape[cShape]["end"][1] - shape[cShape]["start"][1]) == 0:
-                         shape[cShape]["equation"] = float('inf')
+                    shape[cShape][1] = (cPixels[-1][0], cPixels[-1][1])
+                    if (shape[cShape][1][1] - shape[cShape][0][1]) == 0:
+                         shape[cShape][2] = float('inf')
                     else:
-                         shape[cShape]["equation"] = (shape[cShape]["end"][0] - shape[cShape]["start"][0])/(shape[cShape]["end"][1] - shape[cShape]["start"][1])
+                         shape[cShape][2] = (shape[cShape][1][0] - shape[cShape][0][0])/(shape[cShape][1][1] - shape[cShape][0][1])
                     if not complete:
-                         shape[(len(shape)+1)] = {"start": [nextY, nextX], "end": [nextY, nextX], "equation": None}
-                         cPixels = [[nextY, nextX]]
-                         cShape = len(shape)
+                         shape.append([(nextY, nextX), (nextY, nextX), None])
+                         cPixels = [(nextY, nextX)]
+                         cShape = len(shape)-1
                else:
-                    cPixels.append([nextY, nextX])
+                    cPixels.append((nextY, nextX))
                     try:
-                         shape[cShape]["equation"] = (nextY - shape[cShape]["start"][0])/(nextX - shape[cShape]["start"][1]) #This makes an imperfect line. Replace with a best fit line (Also, needs to incorporate curves)
+                         shape[cShape][2] = (nextY - shape[cShape][0][0])/(nextX - shape[cShape][0][1]) #This makes an imperfect approximation. Replace with a best fit line (Also, needs to incorporate curves)
                     except ZeroDivisionError:
-                         shape[cShape]["equation"] = float('inf')
+                         shape[cShape][2] = float('inf')
 
                          
                y = nextY
                x = nextX
                count += 1
 
-          print(shape)
+          #print(shape)
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
      
           return newPatt
 
 
-     def isPOI(self, coords, image, focus):
-          if image[coords[1]][coords[0]] > focus:
+     def isPOI(self, pixelVal, focus):
+          if pixelVal > focus:
                return True
           return False
 
       
      def findPOI(self, image, focus):
           #Scans document to find the first pixel that falls within the focus range
-          #Look to see if this can be optimized
           for y in range(0, len(image)):
                for x in range(0, len(image[y])):
                     if image[y][x] > focus:
@@ -226,12 +228,11 @@ class SimpleBWImage(OOI):
      '''
      def expand(self, image, x, y, focus, previousDirection):
           #Is there a more intelligent way to do this?
-          #Fix this - breaks at corners
 
           #Looking right
           if previousDirection != "left" and (x+1)<len(image[y]):
                right = [[x+1, y+1], [x+1, y], [x+1, y-1]]
-               rightPOI = [self.isPOI([x+1, y+1], image, focus), self.isPOI([x+1, y], image, focus), self.isPOI([x+1, y-1], image, focus)]
+               rightPOI = [self.isPOI(image[y+1][x+1], focus), self.isPOI(image[y][x+1], focus), self.isPOI(image[x+1][y-1], focus)]
                if True in rightPOI:
                     if False in rightPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not rightPOI[0]) and rightPOI[1]:
@@ -246,7 +247,7 @@ class SimpleBWImage(OOI):
           #Looking left
           if previousDirection != "right" and (x-1)>=0:
                left = [[x-1, y+1], [x-1, y], [x-1, y-1]]
-               leftPOI = [self.isPOI([x-1, y+1], image, focus), self.isPOI([x-1, y], image, focus), self.isPOI([x-1, y-1], image, focus)]
+               leftPOI = [self.isPOI(image[y+1][x-1], focus), self.isPOI(image[y][x-1], focus), self.isPOI(image[y-1][x-1], focus)]
                if True in leftPOI:
                     if False in leftPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not leftPOI[0]) and leftPOI[1]:
@@ -261,7 +262,7 @@ class SimpleBWImage(OOI):
           #Looking down
           if previousDirection != "up" and (y-1)>=0:
                down = [[x-1, y-1], [x, y-1], [x+1, y-1]]
-               downPOI = [self.isPOI([x-1, y-1], image, focus), self.isPOI([x, y-1], image, focus), self.isPOI([x+1, y-1], image, focus)]
+               downPOI = [self.isPOI(image[y-1][x-1], focus), self.isPOI(image[y-1][x], focus), self.isPOI(image[x+1][y-1], focus)]
                if True in downPOI:
                     if False in downPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not downPOI[0]) and downPOI[1]:
@@ -276,7 +277,7 @@ class SimpleBWImage(OOI):
           #Looking up
           if previousDirection != "down" and (y+1)<len(image):
                up = [[x-1, y+1], [x, y+1], [x+1, y+1]]
-               upPOI = [self.isPOI([x-1, y+1], image, focus), self.isPOI([x, y+1], image, focus), self.isPOI([x+1, y+1], image, focus)]
+               upPOI = [self.isPOI(image[y+1][x-1], focus), self.isPOI(image[y+1][x], focus), self.isPOI(image[y+1][x+1], focus)]
                if True in upPOI:
                     if False in upPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not upPOI[0]) and upPOI[1]:
@@ -293,16 +294,16 @@ class SimpleBWImage(OOI):
 
 
      def setRelations(self, shape): #What criteria are necessary to identify shapes?
-          pattern = [] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
-          for s1 in shape:
-               angles = []
+          pattern = [len(shape)] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
+          for s1 in range(len(shape)):
+               angleSet = []
                #Calculates the angle between any two lines (fix this to create a relation between curves)
-               for s2 in shape:
+               for s2 in range(len(shape)):
                     if s1 != s2:
-                         angle = math.atan(shape[s1]["equation"])-math.atan(shape[s2]["equation"])
-                         angles.append(angle)
+                         angle = math.atan(shape[s1][2])-math.atan(shape[s2][2])
+                         angleSet.append(angle)
                          
-               pattern.append(angles)
+               pattern.append(angleSet)
 
           return pattern
                          
