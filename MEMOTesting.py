@@ -1,5 +1,5 @@
 from TestDataSquares import *
-from MeMo import *
+from MEMO import *
 
 
 data = makeTestImage()
