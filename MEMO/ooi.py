@@ -2,7 +2,7 @@ import math
 import itertools
 
 
-class OOI: #ObjectOfInterest
+class OOI(object): #ObjectOfInterest
 
      def __init__(self, identifier = None, parents = None, pattern = None, weight = 0, children = None):
           self.identifier = identifier

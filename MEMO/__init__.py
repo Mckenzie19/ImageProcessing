@@ -1,2 +1,2 @@
-from .OOI import *
-from .SimpleBW import *
+from .ooi import *
+from .simpleBW import *

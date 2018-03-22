@@ -1,6 +1,6 @@
 import math
 import itertools
-from .OOI import *
+from .ooi import *
 
 '''
 Assuming that the image file has been uploaded as aa array of pixels with their
@@ -27,7 +27,7 @@ Functions:
 class SimpleBWImage(OOI):
 
      def __init__(self, identifier = None, parents = {}, pattern = [], weight = 0, children = {}):
-          super().__init__(identifier, parents, pattern, weight, children)
+          super(SimpleBWImage, self).__init__(identifier, parents, pattern, weight, children)
           
 
 

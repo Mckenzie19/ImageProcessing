@@ -1,4 +1,4 @@
-from TestDataSquares import *
+from testDataSquares import *
 from MEMO import *
 
 
