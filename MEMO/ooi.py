@@ -4,7 +4,7 @@ import itertools
 
 class OOI(object): #ObjectOfInterest
 
-     def __init__(self, identifier = None, parents = None, pattern = None, weight = 0, children = None):
+     def __init__(self, identifier = None, pattern = None, parents = None, weight = 0, children = None):
           self.identifier = identifier
           self.weight = weight
           self.parents = parents #Parents and Children should follow the form: {identifier: object}
@@ -33,16 +33,18 @@ class OOI(object): #ObjectOfInterest
                     setMatch = 0
                     weight = len(as1)
                     for j in range(weight):
-                         if as1[j] != 0:
-                              setMatch += (as2[j] - as1[j])/abs(as1[j])
+                         if as2[j] == as1[j]: #Difference is zero
+                             pass 
+                         elif as1[j] != 0:
+                              setMatch += abs(as2[j] - as1[j])/abs(as1[j])
                          else:
-                              setMatch += (as2[j] - 0.000001)/0.000001 #Check to make sure this is an okay approximation
-
+                              setMatch += abs(as2[j] - 0.000001)/0.000001 #Check to make sure this is an okay approximation
+                              
                     setRatio = setMatch / weight
                     totalMatch += setRatio
 
                testRatio = totalMatch / (len(test)+1) #Since the assumption is that the number of parts are the same, their difference is zero
-               if testRatio <= bestRatio:
+               if abs(testRatio) <= abs(bestRatio):
                     bestRatio = testRatio
                     bestPerm = test
 

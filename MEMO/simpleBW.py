@@ -26,8 +26,8 @@ Functions:
 '''
 class SimpleBWImage(OOI):
 
-     def __init__(self, identifier = None, parents = {}, pattern = [], weight = 0, children = {}):
-          super(SimpleBWImage, self).__init__(identifier, parents, pattern, weight, children)
+     def __init__(self, identifier = None, pattern = None, parents = None, weight = 0, children = None):
+          super(SimpleBWImage, self).__init__(identifier, pattern, parents, weight, children)
           
 
 
@@ -42,11 +42,11 @@ class SimpleBWImage(OOI):
           #Determines which child best matches the pattern given
           for child in self.children:
                matchRatio, childPattern = self.alignPatterns(self.children[child].pattern, imagePattern)
-               if matchRatio >= bestRatio:
+               if matchRatio <= bestRatio:
                     bestRatio = matchRatio
                     bestChild = child
 
-          if bestRatio >= proxRatio:
+          if bestRatio <= (1-proxRatio):
                return bestChild, bestRatio
           else:
                return None, 0.0
@@ -55,9 +55,12 @@ class SimpleBWImage(OOI):
      #Each pattern needs a certain weight to it, so that "new" patterns are changed more by new inputs, while old patterns are changed less
      def updateChildren(self, image, childName, focus = 0.5, unityLimit = 0.8):
           imagePattern = self.analyzeImage(image, focus, unityLimit)
-          if childName not in self.children:
+          if self.children == None:
+               newChild = SimpleBWImage(childName, imagePattern, {self.identifier: self}, 1)
+               self.children = {childName: newChild}
+          elif childName not in self.children:
                #Currently using objects to store information. Find a way to generalize this.
-               newChild = SimpleBWImage(childName, {self.identifier: self}, imagePattern, 1)
+               newChild = SimpleBWImage(childName, imagePattern, {self.identifier: self}, 1)
                self.children[childName] = newChild
           else:
                self.children[childName].weight += 1 #Increases weight of pattern by 1
