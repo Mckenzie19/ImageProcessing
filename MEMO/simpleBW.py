@@ -53,7 +53,7 @@ class SimpleBWImage(OOI):
 
 
      #Each pattern needs a certain weight to it, so that "new" patterns are changed more by new inputs, while old patterns are changed less
-     def updateChildren(self, image, childName, focus = 0.5, unityLimit = 0.8):
+     def updateChildren(self, image, childName, focus = 0.7, unityLimit = 0.9):
           imagePattern = self.analyzeImage(image, focus, unityLimit)
           if self.children == None:
                newChild = SimpleBWImage(childName, imagePattern, {self.identifier: self}, 1)
@@ -129,8 +129,8 @@ class SimpleBWImage(OOI):
                     else:
                          shape[cShape][2] = (shape[cShape][1][0] - shape[cShape][0][0])/(shape[cShape][1][1] - shape[cShape][0][1])
                     if not complete:
-                         shape.append([(nextY, nextX), (nextY, nextX), None])
-                         cPixels = [(nextY, nextX)]
+                         shape.append([(y, x), (nextY, nextX), None])
+                         cPixels = [(y, x), (nextY, nextX)]
                          cShape = len(shape)-1
                else:
                     cPixels.append((nextY, nextX))
@@ -144,9 +144,10 @@ class SimpleBWImage(OOI):
                x = nextX
                count += 1
 
-          print(shape)
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
+          print(shape, "\n")
           print(newPatt)
+
           return newPatt
 
 
@@ -174,15 +175,10 @@ class SimpleBWImage(OOI):
      def expand(self, image, x, y, focus, prevDir):
           #Is there a more intelligent way to do this?
 
-          print("\n\nAt Position: ", (x, y))
-          print("Previous Direction: ", prevDir)
-
           #Looking right
           if (x+1)<len(image[y]):
                right = [[x+1, y+1], [x+1, y], [x+1, y-1]]
-               print("\nLooked Right: ", right)
                rightPOI = [(prevDir != "ul") and self.isPOI(image[y+1][x+1], focus), (prevDir != "l") and self.isPOI(image[y][x+1], focus), (prevDir != "dl") and self.isPOI(image[x+1][y-1], focus)]
-               print("POI List: ", rightPOI)
                if True in rightPOI:
                     if False in rightPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not rightPOI[0]) and rightPOI[1]:
@@ -197,9 +193,7 @@ class SimpleBWImage(OOI):
           #Looking left
           if (x-1)>=0:
                left = [[x-1, y+1], [x-1, y], [x-1, y-1]]
-               print("\nLooked Left: ", left)
                leftPOI = [(prevDir != "ur") and self.isPOI(image[y+1][x-1], focus), (prevDir != "r") and self.isPOI(image[y][x-1], focus), (prevDir != "dr") and self.isPOI(image[y-1][x-1], focus)]
-               print("POI List: ", leftPOI)
                if True in leftPOI:
                     if False in leftPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not leftPOI[0]) and leftPOI[1]:
@@ -214,9 +208,7 @@ class SimpleBWImage(OOI):
           #Looking down
           if (y-1)>=0:
                down = [[x-1, y+1], [x, y+1], [x+1, y+1]]
-               print("\nLooked Down: ", down)
                downPOI = [(prevDir != "ur") and self.isPOI(image[y+1][x-1], focus), (prevDir != "u") and self.isPOI(image[y+1][x], focus), (prevDir != "ul") and self.isPOI(image[y+1][x+1], focus)]
-               print("POI List: ", downPOI)
                if True in downPOI:
                     if False in downPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not downPOI[0]) and downPOI[1]:
@@ -231,9 +223,7 @@ class SimpleBWImage(OOI):
           #Looking up
           if (y+1)<len(image):
                up = [[x-1, y-1], [x, y-1], [x+1, y-1]]
-               print("\nLooked Up: ", up)
                upPOI = [(prevDir != "dr") and self.isPOI(image[y-1][x-1], focus), (prevDir != "d") and self.isPOI(image[y-1][x], focus), (prevDir != "dl") and self.isPOI(image[y-1][x+1], focus)]
-               print("POI List: ", upPOI)
                if True in upPOI:
                     if False in upPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not upPOI[0]) and upPOI[1]:
