@@ -144,9 +144,9 @@ class SimpleBWImage(OOI):
                x = nextX
                count += 1
 
-          #print(shape)
+          print(shape)
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
-     
+          print(newPatt)
           return newPatt
 
 
@@ -171,71 +171,81 @@ class SimpleBWImage(OOI):
      it will first look right, then left, then down, then up. Pixels along borders are chosen over pixels with
      neighbors.
      '''
-     def expand(self, image, x, y, focus, previousDirection):
+     def expand(self, image, x, y, focus, prevDir):
           #Is there a more intelligent way to do this?
 
+          print("\n\nAt Position: ", (x, y))
+          print("Previous Direction: ", prevDir)
+
           #Looking right
-          if previousDirection != "left" and (x+1)<len(image[y]):
+          if (x+1)<len(image[y]):
                right = [[x+1, y+1], [x+1, y], [x+1, y-1]]
-               rightPOI = [self.isPOI(image[y+1][x+1], focus), self.isPOI(image[y][x+1], focus), self.isPOI(image[x+1][y-1], focus)]
+               print("\nLooked Right: ", right)
+               rightPOI = [(prevDir != "ul") and self.isPOI(image[y+1][x+1], focus), (prevDir != "l") and self.isPOI(image[y][x+1], focus), (prevDir != "dl") and self.isPOI(image[x+1][y-1], focus)]
+               print("POI List: ", rightPOI)
                if True in rightPOI:
                     if False in rightPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not rightPOI[0]) and rightPOI[1]:
-                              return right[1][1], right[1][0], "right"
+                              return right[1][1], right[1][0], "r"
                          elif not (rightPOI[0] or rightPOI[1]) and rightPOI[2]:
-                              return right[2][1], right[2][0], "right"
+                              return right[2][1], right[2][0], "ur"
                          elif (not rightPOI[2]) and rightPOI[1]:
-                              return right[1][1], right[1][0], "right"
+                              return right[1][1], right[1][0], "r"
                          else:
-                              return right[0][1], right[0][0], "right"
+                              return right[0][1], right[0][0], "dr"
 
           #Looking left
-          if previousDirection != "right" and (x-1)>=0:
+          if (x-1)>=0:
                left = [[x-1, y+1], [x-1, y], [x-1, y-1]]
-               leftPOI = [self.isPOI(image[y+1][x-1], focus), self.isPOI(image[y][x-1], focus), self.isPOI(image[y-1][x-1], focus)]
+               print("\nLooked Left: ", left)
+               leftPOI = [(prevDir != "ur") and self.isPOI(image[y+1][x-1], focus), (prevDir != "r") and self.isPOI(image[y][x-1], focus), (prevDir != "dr") and self.isPOI(image[y-1][x-1], focus)]
+               print("POI List: ", leftPOI)
                if True in leftPOI:
                     if False in leftPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not leftPOI[0]) and leftPOI[1]:
-                              return left[1][1], left[1][0], "left"
+                              return left[1][1], left[1][0], "l"
                          elif not (leftPOI[0] or leftPOI[1]) and leftPOI[2]:
-                              return left[2][1], left[2][0], "left"
+                              return left[2][1], left[2][0], "ul"
                          elif (not leftPOI[2]) and leftPOI[1]:
-                              return left[1][1], left[1][0], "left"
+                              return left[1][1], left[1][0], "l"
                          else:
-                              return left[0][1], left[0][0], "left"
+                              return left[0][1], left[0][0], "dl"
 
           #Looking down
-          if previousDirection != "up" and (y-1)>=0:
-               down = [[x-1, y-1], [x, y-1], [x+1, y-1]]
-               downPOI = [self.isPOI(image[y-1][x-1], focus), self.isPOI(image[y-1][x], focus), self.isPOI(image[x+1][y-1], focus)]
+          if (y-1)>=0:
+               down = [[x-1, y+1], [x, y+1], [x+1, y+1]]
+               print("\nLooked Down: ", down)
+               downPOI = [(prevDir != "ur") and self.isPOI(image[y+1][x-1], focus), (prevDir != "u") and self.isPOI(image[y+1][x], focus), (prevDir != "ul") and self.isPOI(image[y+1][x+1], focus)]
+               print("POI List: ", downPOI)
                if True in downPOI:
                     if False in downPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not downPOI[0]) and downPOI[1]:
-                              return down[1][1], down[1][0], "down"
+                              return down[1][1], down[1][0], "d"
                          elif not (downPOI[0] or downPOI[1]) and downPOI[2]:
-                              return down[2][1], down[2][0], "down"
+                              return down[2][1], down[2][0], "dr"
                          elif (not downPOI[2]) and downPOI[1]:
-                              return down[1][1], down[1][0], "down"
+                              return down[1][1], down[1][0], "d"
                          else:
-                              return down[0][1], down[0][0], "down"
+                              return down[0][1], down[0][0], "dl"
 
           #Looking up
-          if previousDirection != "down" and (y+1)<len(image):
-               up = [[x-1, y+1], [x, y+1], [x+1, y+1]]
-               upPOI = [self.isPOI(image[y+1][x-1], focus), self.isPOI(image[y+1][x], focus), self.isPOI(image[y+1][x+1], focus)]
+          if (y+1)<len(image):
+               up = [[x-1, y-1], [x, y-1], [x+1, y-1]]
+               print("\nLooked Up: ", up)
+               upPOI = [(prevDir != "dr") and self.isPOI(image[y-1][x-1], focus), (prevDir != "d") and self.isPOI(image[y-1][x], focus), (prevDir != "dl") and self.isPOI(image[y-1][x+1], focus)]
+               print("POI List: ", upPOI)
                if True in upPOI:
                     if False in upPOI: #If there are no non-POI, then there are no border pixels to grab
                          if (not upPOI[0]) and upPOI[1]:
-                              return up[1][1], up[1][0], "up"
+                              return up[1][1], up[1][0], "u"
                          elif not (upPOI[0] or upPOI[1]) and upPOI[2]:
-                              return up[2][1], up[2][0], "up"
+                              return up[2][1], up[2][0], "ur"
                          elif (not upPOI[2]) and upPOI[1]:
-                              return up[1][1], up[1][0], "up"
+                              return up[1][1], up[1][0], "u"
                          else:
-                              return up[0][1], up[0][0], "up"
+                              return up[0][1], up[0][0], "ul"
 
-          return y, x, previousDirection
-
+          return y, x, prevDir
 
 
      def setRelations(self, shape): #What criteria are necessary to identify shapes?

@@ -1,6 +1,36 @@
 import numpy as np
 
 
+def squareDataTest():
+
+    dataSet = makeTestData(50)
+    tiltSq1 = np.zeros((10,10))
+
+    tiltSq1[1][4] = 0.5
+    tiltSq1[2][3] = 0.5
+    tiltSq1[2][4] = 0.8
+    tiltSq1[2][5] = 0.5
+    tiltSq1[3][2] = 0.5
+    tiltSq1[3][3] = 0.8
+    tiltSq1[3][5] = 0.8
+    tiltSq1[3][6] = 0.5
+    tiltSq1[4][1] = 0.5
+    tiltSq1[4][2] = 0.8
+    tiltSq1[4][6] = 0.8
+    tiltSq1[4][7] = 0.5
+    tiltSq1[5][2] = 0.5
+    tiltSq1[5][3] = 0.8
+    tiltSq1[5][5] = 0.8
+    tiltSq1[5][6] = 0.5
+    tiltSq1[6][3] = 0.5
+    tiltSq1[6][4] = 0.8
+    tiltSq1[6][5] = 0.5
+    tiltSq1[7][4] =  0.5
+
+    return dataSet, tiltSq1
+
+
+
 def makeTestData(numSquares):
     squares = []
     for x in range(numSquares):
