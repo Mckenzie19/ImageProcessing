@@ -3,44 +3,66 @@ import itertools
 from .ooi import *
 
 '''
-Assuming that the image file has been uploaded as aa array of pixels with their
-value equalling the color stored in it. Current calculations assume
-that images are in grayscale, and that each pixel has an intensity between 0 and 1.
-This should be changed to a more applicable number scale later on.
+This file contains the class SimpleBWImage, which is a subclass of the OOI class. A Simple Black and White Image
+is characterized by having only a single object, where the object contains grayscale colors and is continous (the object does
+not have any breaks in its outline/shape).
+
+Current Heuristics:
+*Information given on the image is in a 2x2 array
+*Color information is on a scale from 0 to 1, with 0 being white and 1 being black
+*Object does not have any curves
+
 '''
 
-          
-'''
-Simple Black and White Image (Single object images)
-
-Children will eventually consist of the different shapes (square, rectangle, etc). Stored as a dictionary?
-Functions:
-     identifyImage: Given an image, will return what shape the program identifies it as
-     updatePattern: Updates what it means to be a SimpleBWImage given an image
-     updateChildren: Given an image and what shape that image represents, updates the pattern of the corresponding child
-     analyzeImage: Used to determine the pattern shown by a given image
-     isPOI: Determines if a given pixel is within the focus bounds
-     findPOI: Finds the initial pixel of interest by scanning the image
-     expand: Finds the next POI for the program to look at
-     setRelations: After POI analysis, determines the relations between the different parts of the object
-'''
 class SimpleBWImage(OOI):
+     """
+     Simple Black and White Image (SimpleBWImage)
+
+     Description: Classifies and analyzes images that are given to it in array form.
+
+     Functions
+     *identifyImage: Identifies the type of object within a given image
+     *updateChildren: Updates the pattern of the child whose name is given, or identifies which child's pattern should be updated
+     *analyzeImage: Creates a pattern based upon a given image
+     *isPOI: Identifies whether or not a given pixel is a pixel of interest
+     *findPOI: Finds the "first" pixel of interest in an image, moving from left to right, top to bottom
+     *expand: Given the current pixel position and the previous direction expanded, finds the next adjacent POI
+     *setRelations: Given a list of parts (the "shape"), returns a pattern
+     """
 
      def __init__(self, identifier = None, pattern = None, parents = None, weight = 0, children = None):
+          """
+          Description: Creates a SimpleBWImage object
+
+          Parameters
+          *identifier: String used to identify the object
+          *pattern: An array that contains the pattern which identifies the object as unique
+          *parents: Dictionary whose keys are the identifiers of the parent objects and whose values are the parent objects
+          *weight: Represents the number of times the pattern has been reinforced, starting with 1 at the pattern's creation
+          *children: Dictionary whose keys are the identifiers of the child objects and whose values are the child objects
+          
+          """
           super(SimpleBWImage, self).__init__(identifier, pattern, parents, weight, children)
           
 
+     def identifyImage(self, image, focus = 0.5, unityLimit = 0.9, proxRatio = 0.8):
+          """
+          Description: Given an image, will return the child that best matches the image's pattern, given the best match is within the proximity ratio
 
-     def updatePattern(self, image, focus = 0.5, unityLimit = 0.8):
-          return
-     
-
-     def identifyImage(self, image, focus = 0.5, unityLimit = 0.8, proxRatio = 0.8):
+          Parameters
+          *image: Array containing the pixel data
+          *focus: Value which defines the lowest pixel value that is considered "interesting"
+          *unityLimit: Value that defines when pixels are considered continuous and when they are considered to be a new part
+          *proxRatio: Value that defines when the image pattern and child pattern are a "match"
+          
+          """
+          
           imagePattern = self.analyzeImage(image, focus, unityLimit)
           bestRatio = 0.0
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
+               #Returns the difference between the two patterns, as well as the child pattern which created this ratio
                matchRatio, childPattern = self.alignPatterns(self.children[child].pattern, imagePattern)
                if matchRatio <= bestRatio:
                     bestRatio = matchRatio
@@ -52,8 +74,17 @@ class SimpleBWImage(OOI):
                return None, 0.0
 
 
-     #Each pattern needs a certain weight to it, so that "new" patterns are changed more by new inputs, while old patterns are changed less
-     def updateChildren(self, image, childName, focus = 0.7, unityLimit = 0.9):
+     def updateChildren(self, image, childName, focus = 0.5, unityLimit = 0.9):
+          """
+          Description: Given an image, either updates the pattern of the child whose identifier is childName or creates a new child
+
+          Parameters
+          *image: Array containing the image data
+          *childName: Identifier of child whose pattern will be updated
+          *focus: Defines which pixels are "interesting" and which are not
+          *unityLimit: Defines when pixels are considered continuous and when they are not
+          """
+          
           imagePattern = self.analyzeImage(image, focus, unityLimit)
           if self.children == None:
                newChild = SimpleBWImage(childName, imagePattern, {self.identifier: self}, 1)
@@ -80,10 +111,16 @@ class SimpleBWImage(OOI):
           return
           
 
-     #Focus is what is used to determine if there is enough intensity in the pixel to determine if it is a PIO
-     #Continuity is being defined as having a straight line (~1). Anything breaking that by a significant portion
-     #is considered to be a new "part" of the object
      def analyzeImage(self, image, focus, unityLimit):
+          """
+          Description: Given an image, returns a pattern which defines the image
+
+          Parameters
+          *image: Array containing the pixel data
+          *focus: Defines which pixels are "interesting"
+          *unityLimit: Defines which pixels are continuous
+          """
+          
           y, x = self.findPOI(image, focus)
           shape = [[(y,x),(y,x), None]] #Holds information on the different parts of the image
           cShape = 0
@@ -145,20 +182,31 @@ class SimpleBWImage(OOI):
                count += 1
 
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
-          print(shape, "\n")
-          print(newPatt)
 
           return newPatt
 
 
      def isPOI(self, pixelVal, focus):
+          """
+          Description: Given the value of a pixel and the focus value, determines of the pixel is a "Pixel of Interest"
+
+          Parameters
+          *pixelVal: Value of the pixel
+          *focus: Defines the lowest value that a pixel can have and still be "interesting"
+          """
           if pixelVal > focus:
                return True
           return False
 
       
      def findPOI(self, image, focus):
-          #Scans document to find the first pixel that falls within the focus range
+          """
+          Description: Scans the image array from left-to-right, top-to-bottom in order to find a POI
+
+          Parameters
+          *image: Array containing pixel data
+          *focus: Defines which pixels are interesting and which are not
+          """
           for y in range(0, len(image)):
                for x in range(0, len(image[y])):
                     if image[y][x] > focus:
@@ -167,13 +215,16 @@ class SimpleBWImage(OOI):
           return None, None
 
 
-     '''
-     The function expand will look at the 8 pixels surrounding the pixel coordinates it is given. From there,
-     it will first look right, then left, then down, then up. Pixels along borders are chosen over pixels with
-     neighbors.
-     '''
      def expand(self, image, x, y, focus, prevDir):
-          #Is there a more intelligent way to do this?
+          """
+          Description: Given the current position, finds the next adjacent POI, looking first right, then left, then down, then up.
+
+          Parameters
+          *image: Array containing pixel data
+          *(x, y): Index values of the current pixel position
+          *focus: Defines what is a POI and what is not
+          *preDir: Holds a string that indicates which direction the function previously expanded
+          """
 
           #Looking right
           if (x+1)<len(image[y]):
@@ -239,6 +290,13 @@ class SimpleBWImage(OOI):
 
 
      def setRelations(self, shape): #What criteria are necessary to identify shapes?
+          """
+          Description: Given a shape (list of parts), determines the relationships between the parts and stores those relations in a pattern
+
+          Parameters
+          *shape: Contains the parts of an analyzed object
+          """
+          
           pattern = [len(shape)] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
           for s1 in range(len(shape)):
                angleSet = []
