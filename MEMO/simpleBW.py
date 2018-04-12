@@ -74,7 +74,7 @@ class SimpleBWImage(OOI):
           if bestRatio <= (1-self.proxRatio):
                return bestChild, bestRatio
           else:
-               return None, 0.0
+               return None, 1.0
 
 
      def updateChildren(self, image, childName):
@@ -129,13 +129,13 @@ class SimpleBWImage(OOI):
           cPixels = [(y,x)] #Holds pixels of the active part
           complete = False
           count = 0
-          direction = None
+          nextState = None
           
           while not complete and count<(len(image)*10): #Extra condition to make sure no infinite loops at the moment. FIXME
-               nextY, nextX, direction = self.expand(image, x, y, direction)
-               print("\n\n(Y, X): ", (y, x))
-               print("(NextY, NextX): ", (nextY, nextX))
-               print("Expansion Direction: ", direction)
+               nextY, nextX, nextState = self.expand(image, x, y, nextState)
+               #print("\n\n(Y, X): ", (y, x))
+               #print("(NextY, NextX): ", (nextY, nextX))
+               #print("Expansion Direction: ", direction)
                
                for s in range(len(shape)): #Makes sure that pixels are not analyzed twice
                     if s != cShape and ((nextY, nextX) == shape[s][0] or (nextY, nextX) == shape[s][1]):
@@ -150,8 +150,8 @@ class SimpleBWImage(OOI):
                     except ZeroDivisionError:
                          pixSlope = float('inf') #Vertical Lines
 
-                    print("Pixel Slope: ", pixSlope)
-                    print("Part Slope: ", shape[cShape][2])
+                    #print("Pixel Slope: ", pixSlope)
+                    #print("Part Slope: ", shape[cShape][2])
                     #Checks if the slope between the current pixel and the previous pixel match the total slope of the current part
                     if shape[cShape][2] == None:
                          failed = False
@@ -165,7 +165,7 @@ class SimpleBWImage(OOI):
                          elif (abs((pixSlope-shape[cShape][2])/shape[cShape][2]) <= self.unityLimit):
                               failed = False
 
-               print("Breaks Continuity: ", failed)     
+               #print("Breaks Continuity: ", failed)     
                if failed or complete:
                     shape[cShape][1] = (cPixels[-1][0], cPixels[-1][1])
                     if (shape[cShape][1][1] - shape[cShape][0][1]) == 0:
@@ -190,20 +190,26 @@ class SimpleBWImage(OOI):
 
           newPatt = self.setRelations(shape) #Defines the relations between different parts of the object. At this point, all data concerning the image can be deleted from memory
 
-          print("\nShape: ", shape)
-          print("Pattern: ", newPatt)
+          #print("\nShape: ", shape)
+          #print("Pattern: ", newPatt)
 
           return newPatt
 
 
-     def isPOI(self, pixelVal):
+     def isPOI(self, y, x, image):
           """
-          Description: Given the value of a pixel and the focus value, determines of the pixel is a "Pixel of Interest"
+          Description: Given the value of a pixel and the focus value, determines of the pixel is a "Pixel of Interest". Also checks
+          to make sure that desired coordinates for the pixel are within the scope of the image.
 
           Parameters
-          *pixelVal: Value of the pixel
+          *y, x: Coordinates of the pixel to be tested
+          *image: Array of pixel values
           """
-          if pixelVal > self.focus:
+          if (y < 0) or (y >= len(image)):
+               return False
+          elif (x < 0) or (x >= len(image[y])):
+               return False
+          elif image[y][x] > self.focus:
                return True
           return False
 
@@ -223,163 +229,33 @@ class SimpleBWImage(OOI):
           return None, None
 
 
-     def expand(self, image, x, y, prevDir):
+     def expand(self, image, x, y, currentS = None):
           """
           Description: Given the current position, finds the next adjacent POI, looking first right, then left, then down, then up.
 
           Parameters
           *image: Array containing pixel data
           *(x, y): Index values of the current pixel position
-          *preDir: Holds a string that indicates which direction the function previously expanded
+          *currentS: The current state, which indicates the order in which pixels should be checked
           """
+          states = {'U': [(y-1, x), (y-1, x+1)], 'R': [(y, x+1), (y+1, x+1)], 'D': [(y+1, x), (y+1, x-1)], 'L': [(y, x-1), (y-1, x-1)]}
+          if currentS == None:
+               currentS = ['U', 'R', 'D', 'L']
 
-          #Checks to make sure that expansion does not go out of range
-          if (x+1) >= len(image[y]): #Currently at far right image
-               borderPOI = [(prevDir != 'dr') and (self.isPOI(image[y-1][x-1])), (prevDir != 'd') and (self.isPOI(image[y-1][x])), False, (prevDir != 'r') and (self.isPOI(image[y][x-1])), False, (prevDir != 'ur') and (self.isPOI(image[y+1][x-1])), (prevDir != 'u') and (self.isPOI(image[y+1][x])), False]
-          elif (x-1) < 0: #Currently at far left of image
-               borderPOI = [False, (prevDir != 'd') and (self.isPOI(image[y-1][x])), (prevDir != 'dl') and (self.isPOI(image[y-1][x+1])), False, (prevDir != 'l') and (self.isPOI(image[y][x+1])), False, (prevDir != 'u') and (self.isPOI(image[y+1][x])), (prevDir != 'ul') and (self.isPOI(image[y+1][x+1]))]
-          elif (y-1) < 0: #Currently at bottom of image
-               borderPOI = [(prevDir != 'dr') and (self.isPOI(image[y-1][x-1])), (prevDir != 'd') and (self.isPOI(image[y-1][x])), (prevDir != 'dl') and (self.isPOI(image[y-1][x+1])), (prevDir != 'r') and (self.isPOI(image[y][x-1])), (prevDir != 'l') and (self.isPOI(image[y][x+1])), False, False, False]
-          elif (y+1) >= len(image): #Currently at top of image
-               borderPOI = [False, False, False, (prevDir != 'r') and (self.isPOI(image[y][x-1])), (prevDir != 'l') and (self.isPOI(image[y][x+1])), (prevDir != 'ur') and (self.isPOI(image[y+1][x-1])), (prevDir != 'u') and (self.isPOI(image[y+1][x])), (prevDir != 'ul') and (self.isPOI(image[y+1][x+1]))]
-          else:
-               borderPOI = [(prevDir != 'dr') and (self.isPOI(image[y-1][x-1])), (prevDir != 'd') and (self.isPOI(image[y-1][x])), (prevDir != 'dl') and (self.isPOI(image[y-1][x+1])), (prevDir != 'r') and (self.isPOI(image[y][x-1])), (prevDir != 'l') and (self.isPOI(image[y][x+1])), (prevDir != 'ur') and (self.isPOI(image[y+1][x-1])), (prevDir != 'u') and (self.isPOI(image[y+1][x])), (prevDir != 'ul') and (self.isPOI(image[y+1][x+1]))]
+          prevPix = (states[currentS[-1]][1], len(currentS)-1) #Obtains the value of the "last" pixel checked and its state
+          for s in range(len(currentS)):
+               for pix in states[currentS[s]]:
+                    if (not self.isPOI(prevPix[0][0], prevPix[0][1], image)) and self.isPOI(pix[0], pix[1], image):
+                         nextState = currentS[s:]+currentS[0:s]
+                         return pix[0], pix[1], nextState
+                    elif (self.isPOI(prevPix[0][0], prevPix[0][1], image) and (not self.isPOI(pix[0], pix[1], image))):
+                         nextState = currentS[prevPix[1]:]+currentS[0:prevPix[1]]
+                         return prevPix[0][0], prevPix[0][1], nextState                    
+                    else:
+                         prevPix = (pix, s)
 
-
-
-          #Expansion wants to continue in the direction it was moving previously
-          if prevDir in ['r', 'ur', 'dr']:
-               #Checks 'ur'
-               if borderPOI[2] and (not(borderPOI[1] and borderPOI[4])):
-                    return y-1, x+1, 'ur'
-               #Checks 'r'
-               elif borderPOI[4] and (not(borderPOI[2] and borderPOI[7])):
-                    return y, x+1, 'r'
-               #Checks 'dr'
-               elif borderPOI[7] and (not(borderPOI[4] and borderPOI[6])):
-                    return y+1, x+1, 'dr'
-               #Checks 'd'
-               elif borderPOI[6] and (not(borderPOI[5] and borderPOI[7])):
-                    return y+1, x, 'd'
-               #Checks 'dl'
-               elif borderPOI[5] and (not(borderPOI[3] and borderPOI[6])):
-                    return y+1, x-1, 'dl'
-               #Checks 'l'
-               elif borderPOI[3] and (not(borderPOI[0] and borderPOI[5])):
-                    return y, x-1, 'l'
-               #Checks 'ul'
-               elif borderPOI[0] and (not(borderPOI[1] and borderPOI[3])):
-                    return y-1, x-1, 'ul'
-               #Checks 'u'
-               elif borderPOI[1] and (not(borderPOI[0] and borderPOI[2])):
-                    return y-1, x, 'u'
-               
-          elif prevDir in ['d', 'dl']:
-               #Checks 'dr'
-               if borderPOI[7] and (not(borderPOI[4] and borderPOI[6])):
-                    return y+1, x+1, 'dr'
-               #Checks 'd'
-               elif borderPOI[6] and (not(borderPOI[5] and borderPOI[7])):
-                    return y+1, x, 'd'
-               #Checks 'dl'
-               elif borderPOI[5] and (not(borderPOI[3] and borderPOI[6])):
-                    return y+1, x-1, 'dl'
-               #Checks 'l'
-               elif borderPOI[3] and (not(borderPOI[0] and borderPOI[5])):
-                    return y, x-1, 'l'
-               #Checks 'ul'
-               elif borderPOI[0] and (not(borderPOI[1] and borderPOI[3])):
-                    return y-1, x-1, 'ul'
-               #Checks 'u'
-               elif borderPOI[1] and (not(borderPOI[0] and borderPOI[2])):
-                    return y-1, x, 'u'
-               #Checks 'ur'
-               elif borderPOI[2] and (not(borderPOI[1] and borderPOI[4])):
-                    return y-1, x+1, 'ur'
-               #Checks 'r'
-               elif borderPOI[4] and (not(borderPOI[2] and borderPOI[7])):
-                    return y, x+1, 'r'
+          return None, None, None         
           
-          elif prevDir in ['l', 'ul']:
-               #Checks 'dl'
-               if borderPOI[5] and (not(borderPOI[3] and borderPOI[6])):
-                    return y+1, x-1, 'dl'
-               #Checks 'l'
-               elif borderPOI[3] and (not(borderPOI[0] and borderPOI[5])):
-                    return y, x-1, 'l'
-               #Checks 'ul'
-               elif borderPOI[0] and (not(borderPOI[1] and borderPOI[3])):
-                    return y-1, x-1, 'ul'
-               #Checks 'u'
-               elif borderPOI[1] and (not(borderPOI[0] and borderPOI[2])):
-                    return y-1, x, 'u'
-               #Checks 'ur'
-               elif borderPOI[2] and (not(borderPOI[1] and borderPOI[4])):
-                    return y-1, x+1, 'ur'
-               #Checks 'r'
-               elif borderPOI[4] and (not(borderPOI[2] and borderPOI[7])):
-                    return y, x+1, 'r'
-               #Checks 'dr'
-               elif borderPOI[7] and (not(borderPOI[4] and borderPOI[6])):
-                    return y+1, x+1, 'dr'
-               #Checks 'd'
-               elif borderPOI[6] and (not(borderPOI[5] and borderPOI[7])):
-                    return y+1, x, 'd'
-               
-          elif prevDir == 'u':
-               #Checks 'ul'
-               if borderPOI[0] and (not(borderPOI[1] and borderPOI[3])):
-                    return y-1, x-1, 'ul'
-               #Checks 'u'
-               elif borderPOI[1] and (not(borderPOI[0] and borderPOI[2])):
-                    return y-1, x, 'u'
-               #Checks 'ur'
-               elif borderPOI[2] and (not(borderPOI[1] and borderPOI[4])):
-                    return y-1, x+1, 'ur'
-               #Checks 'r'
-               elif borderPOI[4] and (not(borderPOI[2] and borderPOI[7])):
-                    return y, x+1, 'r'
-               #Checks 'dr'
-               elif borderPOI[7] and (not(borderPOI[4] and borderPOI[6])):
-                    return y+1, x+1, 'dr'
-               #Checks 'd'
-               elif borderPOI[6] and (not(borderPOI[5] and borderPOI[7])):
-                    return y+1, x, 'd'
-               #Checks 'dl'
-               elif borderPOI[5] and (not(borderPOI[3] and borderPOI[6])):
-                    return y+1, x-1, 'dl'
-               #Checks 'l'
-               elif borderPOI[3] and (not(borderPOI[0] and borderPOI[5])):
-                    return y, x-1, 'l'               
-               
-          else:
-               #Checks 'u'
-               if borderPOI[1] and (not(borderPOI[0] and borderPOI[2])):
-                    return y-1, x, 'u'
-               #Checks 'ur'
-               elif borderPOI[2] and (not(borderPOI[1] and borderPOI[4])):
-                    return y-1, x+1, 'ur'
-               #Checks 'r'
-               elif borderPOI[4] and (not(borderPOI[2] and borderPOI[7])):
-                    return y, x+1, 'r'
-               #Checks 'dr'
-               elif borderPOI[7] and (not(borderPOI[4] and borderPOI[6])):
-                    return y+1, x+1, 'dr'
-               #Checks 'd'
-               elif borderPOI[6] and (not(borderPOI[5] and borderPOI[7])):
-                    return y+1, x, 'd'
-               #Checks 'dl'
-               elif borderPOI[5] and (not(borderPOI[3] and borderPOI[6])):
-                    return y+1, x-1, 'dl'
-               #Checks 'l'
-               elif borderPOI[3] and (not(borderPOI[0] and borderPOI[5])):
-                    return y, x-1, 'l'
-               #Checks 'ul'
-               elif borderPOI[0] and (not(borderPOI[1] and borderPOI[3])):
-                    return y-1, x-1, 'ul'
-               else:
-                    return y, x, prevDir
-               
 
 
      def setRelations(self, shape): #What criteria are necessary to identify shapes?

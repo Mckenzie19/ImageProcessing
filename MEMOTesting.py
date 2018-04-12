@@ -4,12 +4,10 @@ from MEMO import *
 
 data = makeTestImage()
 s1 = SimpleBWImage()
-
+s2 = SimpleBWImage()
 
 def runTest1():
      s1.updateChildren(data, "square")
-     print("s1: ", s1.children["square"].pattern)
-
 
 dataSet = makeTestData(50)
 def runTest2():
@@ -22,3 +20,14 @@ def runTest2():
 def tiltTest():
      dSet, tilt = squareDataTest()
      s1.updateChildren(tilt, "square")
+
+
+def mergeTest():
+     dSet, tilt = squareDataTest()
+     s1.updateChildren(data, "square")
+     s2.updateChildren(tilt, "square")
+     print("s1 Square Pattern: ", s1.children["square"].pattern)
+     print("s2 Square Pattern: ", s2.children["square"].pattern)
+
+     s1.updateChildren(tilt, "square")
+     print("s1 Square Pattern After Merge: ", s1.children["square"].pattern)
