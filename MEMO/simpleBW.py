@@ -266,16 +266,19 @@ class SimpleBWImage(OOI):
           *shape: Contains the parts of an analyzed object
           """
           
-          pattern = [len(shape)] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
+          pattern = [(len(shape), 1)] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
           for s1 in range(len(shape)):
-               angleSet = []
+               relationSet = []
                #Calculates the angle between any two lines (fix this to create a relation between curves)
                for s2 in range(len(shape)):
                     if s1 != s2:
                          angle = math.atan(shape[s1][2])-math.atan(shape[s2][2])
-                         angleSet.append(angle)
+                         len1 = (((shape[s1][0][0]-shape[s1][1][0])**2)+((shape[s1][0][1]-shape[s1][1][1])**2))**(1/2)
+                         len2 = (((shape[s2][0][0]-shape[s2][1][0])**2)+((shape[s2][0][1]-shape[s2][1][1])**2))**(1/2)
+                         relLength = abs(len1-len2)/max(len1, len2)
+                         relationSet.append((((angle, 1),(relLength, 1)), 1))
                          
-               pattern.append(angleSet)
+               pattern.append(relationSet)
 
           return pattern
                          
