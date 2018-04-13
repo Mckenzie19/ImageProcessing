@@ -45,28 +45,28 @@ class OOI(object):
           """
 
           if type(patt1[0]) == type(1) or type(patt2[0]) == type(1): #Checks if the patterns contain nested tuples
-               match = 0
+               ratio = 0
                if (patt2[0] - patt1[0]) == 0:
                     pass
                elif patt1[0] != 0:
-                    match = abs(patt2[0] - patt1[0])/abs(patt1[0])
+                    ratio = abs(patt2[0] - patt1[0])/abs(patt1[0])
                else:
-                    match = abs(patt2[0] - 0.000001)/0.000001
+                    ratio = abs(patt2[0] - 0.0000001)/0.0000001
                     
                return patt1, ratio
 
           else: #Permutates the given array and recursively finds the best match
                lowestRatio = float('inf')
                bestPerm = None
-               for testPerm in itertools.permuations(patt1[1:]):
+               for testPerm in itertools.permutations(patt1[1:]):
                     permRatio = 0
                     perm = []
                     for i in range(len(patt1)-1):
-                         partPerm, partRatio = alignPatterns(testPerm[i], patt2[i+1])
-                         permRatio += partMatch
+                         partPerm, partRatio = self.alignPatterns(testPerm[i], patt2[i+1])
+                         permRatio += partRatio
                          perm += partPerm
 
-                    permRatio = parmRatio/len(patt1) #Assumed number of parts is the same
+                    permRatio = permRatio/len(patt1) #Assumed number of parts is the same
 
                     if abs(permRatio) <= abs(lowestRatio):
                          lowestRatio = permRatio

@@ -98,7 +98,7 @@ class SimpleBWImage(OOI):
           else:
                self.children[childName].weight += 1 #Increases weight of pattern by 1
           
-               matchRatio, IMAngles = self.alignPatterns(imagePattern, self.children[childName].pattern)
+               matchRatio, IMPerm = self.alignPatterns(imagePattern, self.children[childName].pattern)
                #Assuming number of parts is the same
                for i in range(len(IMAngles)):
                     for j in range(len(IMAngles[i])):
@@ -275,8 +275,8 @@ class SimpleBWImage(OOI):
                          angle = math.atan(shape[s1][2])-math.atan(shape[s2][2])
                          len1 = (((shape[s1][0][0]-shape[s1][1][0])**2)+((shape[s1][0][1]-shape[s1][1][1])**2))**(1/2)
                          len2 = (((shape[s2][0][0]-shape[s2][1][0])**2)+((shape[s2][0][1]-shape[s2][1][1])**2))**(1/2)
-                         relLength = abs(len1-len2)/max(len1, len2)
-                         relationSet.append((((angle, 1),(relLength, 1)), 1))
+                         relLength = abs(len1-len2)/len1
+                         relationSet.append([1, ((1, angle),(1, relLength))])
                          
                pattern.append(relationSet)
 
