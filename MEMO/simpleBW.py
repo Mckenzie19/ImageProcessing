@@ -98,7 +98,9 @@ class SimpleBWImage(OOI):
           else:
                self.children[childName].weight += 1 #Increases weight of pattern by 1
           
-               matchRatio, IMPerm = self.alignPatterns(imagePattern, self.children[childName].pattern)
+               matchRatio, IMPatt = self.alignPatterns(imagePattern, self.children[childName].pattern)
+               self.children[childName].pattern = self.updatePattern(self.children[childName].pattern, IMPatt)
+               """
                #Assuming number of parts is the same
                for i in range(len(IMAngles)):
                     for j in range(len(IMAngles[i])):
@@ -108,10 +110,19 @@ class SimpleBWImage(OOI):
                               diffRatio = (self.children[childName].pattern[i+1][j] - 0.000001) / 0.000001
                               
                          self.children[childName].pattern[i+1][j] += (self.children[childName].pattern[i+1][j]*(diffRatio/self.children[childName].weight)) #Change the angle by the percent difference in angles divided by the total weight of the pattern 
-
-               
+     
+               """
           return
-          
+
+
+
+     def updatePattern(self, childPatt, IMPatt):
+
+          newPatt = None
+
+          return newPatt
+
+
 
      def analyzeImage(self, image):
           """

@@ -44,14 +44,14 @@ class OOI(object):
           *patt2: Second pattern to be analyzed
           """
 
-          if type(patt1[0]) == type(1) or type(patt2[0]) == type(1): #Checks if the patterns contain nested tuples
+          if type(patt1[1]) == type(1) or type(patt2[1]) == type(1): #Checks if the patterns contain nested tuples
                ratio = 0
-               if (patt2[0] - patt1[0]) == 0:
+               if (patt2[1] - patt1[1]) == 0:
                     pass
-               elif patt1[0] != 0:
-                    ratio = abs(patt2[0] - patt1[0])/abs(patt1[0])
+               elif patt1[1] != 0:
+                    ratio = abs(patt2[1] - patt1[1])/abs(patt1[1])
                else:
-                    ratio = abs(patt2[0] - 0.0000001)/0.0000001
+                    ratio = abs(patt2[1] - 0.0000001)/0.0000001
                     
                return patt1, ratio
 
