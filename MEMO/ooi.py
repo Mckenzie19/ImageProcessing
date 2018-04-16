@@ -44,14 +44,20 @@ class OOI(object):
           *patt2: Second pattern to be analyzed
           """
 
-          if type(patt1[1]) == type(1) or type(patt2[1]) == type(1): #Checks if the patterns contain nested tuples
+          #print("\nPattern 1: ", patt1)
+          #print("Pattern 2: ", patt2)
+
+          if type(patt1) in [type(1.0), type(1)]: #Checks if the patterns contain nested tuples
+
                ratio = 0
-               if (patt2[1] - patt1[1]) == 0:
+               if type(patt2) not in [type(1.0), type(1)]:
+                    ratio = float('inf')
+               elif (patt2 - patt1) == 0:
                     pass
-               elif patt1[1] != 0:
-                    ratio = abs(patt2[1] - patt1[1])/abs(patt1[1])
+               elif patt1 != 0:
+                    ratio = abs(patt2 - patt1)/abs(patt1)
                else:
-                    ratio = abs(patt2[1] - 0.0000001)/0.0000001
+                    ratio = abs(patt2 - 0.0000001)/0.0000001
                     
                return patt1, ratio
 
@@ -59,18 +65,27 @@ class OOI(object):
                lowestRatio = float('inf')
                bestPerm = None
                for testPerm in itertools.permutations(patt1[1:]):
-                    permRatio = 0
-                    perm = []
-                    for i in range(len(patt1)-1):
+                    #print("Permutation: ", testPerm)
+                    totRatio = 0
+                    totPerm = [((patt1[0]+patt2[0])/2)]
+                    for i in range(len(testPerm)):
+                         if type(testPerm[i]) != type(patt2[i+1]):
+                              totRatio = float('inf')
+                              totPerm.append(testPerm)
+                              break
                          partPerm, partRatio = self.alignPatterns(testPerm[i], patt2[i+1])
-                         permRatio += partRatio
-                         perm += partPerm
+                         totRatio += partRatio
+                         totPerm.append(partPerm)
 
-                    permRatio = permRatio/len(patt1) #Assumed number of parts is the same
-
-                    if abs(permRatio) <= abs(lowestRatio):
-                         lowestRatio = permRatio
-                         bestPerm = perm
+                    averageRatio = totRatio/len(testPerm)
+                    if averageRatio <= lowestRatio:
+                         lowestRatio = averageRatio
+                         bestPerm = totPerm
 
                return bestPerm, lowestRatio
+
+
+
+
+          
           
