@@ -61,14 +61,15 @@ class SimpleBWImage(OOI):
           """
           
           imagePattern = self.analyzeImage(image)
+          #print("Image Pattern (Identify Image): ", imagePattern)
           bestRatio = 0.0
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
                #Returns the difference between the two patterns, as well as the child pattern which created this ratio
-               matchRatio, childPattern = self.alignPatterns(self.children[child].pattern, imagePattern)
-               if matchRatio <= bestRatio:
-                    bestRatio = matchRatio
+               childPattern, diffRatio = self.alignPatterns(self.children[child].pattern, imagePattern)
+               if diffRatio <= bestRatio:
+                    bestRatio = diffRatio
                     bestChild = child
 
           if bestRatio <= (1-self.proxRatio):
@@ -97,30 +98,49 @@ class SimpleBWImage(OOI):
                self.children[childName] = newChild
           else:
                self.children[childName].weight += 1 #Increases weight of pattern by 1
-          
-               matchRatio, IMPatt = self.alignPatterns(imagePattern, self.children[childName].pattern)
-               self.children[childName].pattern = self.updatePattern(self.children[childName].pattern, IMPatt)
-               """
-               #Assuming number of parts is the same
-               for i in range(len(IMAngles)):
-                    for j in range(len(IMAngles[i])):
-                         try:
-                              diffRatio = (self.children[childName].pattern[i+1][j] - IMAngles[i][j]) / abs(IMAngles[i][j])
-                         except ZeroDivisionError:
-                              diffRatio = (self.children[childName].pattern[i+1][j] - 0.000001) / 0.000001
-                              
-                         self.children[childName].pattern[i+1][j] += (self.children[childName].pattern[i+1][j]*(diffRatio/self.children[childName].weight)) #Change the angle by the percent difference in angles divided by the total weight of the pattern 
-     
-               """
+
+               #print("\n\nImage Pattern (Update Children): ", imagePattern)
+               #print("Child Pattern (Update Children): ", self.children[childName].pattern)
+               IMPatt, ratio = self.alignPatterns(imagePattern, self.children[childName].pattern)
+               self.children[childName].pattern, ratio = self.updatePattern(self.children[childName].pattern, IMPatt)
+
           return
 
 
 
      def updatePattern(self, childPatt, IMPatt):
+          #print("\nChild Pattern: ", childPatt)
+          #print("Image Pattern: ", IMPatt)
 
-          newPatt = None
+          #Assuming childPatt type will match IMPatt type
+          if type(childPatt[1]) in [type(1.0), type(1)]:
+               if (childPatt[1] - IMPatt[1]) == 0:
+                    agreement = 1
+               elif IMPatt[1] == 0:
+                    agreement = 0
+               else:
+                    agreement = 1 - abs((childPatt[1] - IMPatt[1])/IMPatt[1])
 
-          return newPatt
+               newWeight = ((childPatt[0]+IMPatt[0])/2)*(agreement)
+               newValue = (childPatt[1] + IMPatt[1])/2
+
+               return (newWeight, newValue), agreement
+
+          else:
+               totAgreement = 0
+               values = []
+               for val in range(len(childPatt)-1):
+                    newVal, agreement = self.updatePattern(childPatt[val+1], IMPatt[val+1])
+                    values.append(newVal)
+                    totAgreement += agreement
+                    #print("Calculated Values: ", values)
+                    #print("Total Agreement: ", totAgreement)
+
+               agreementRatio = totAgreement / len(values)
+               newWeight = abs(((childPatt[0] + IMPatt[0])/2)*agreementRatio)
+               pattern = [newWeight] + values
+
+               return pattern, agreementRatio
 
 
 
@@ -277,17 +297,17 @@ class SimpleBWImage(OOI):
           *shape: Contains the parts of an analyzed object
           """
           
-          pattern = [(len(shape), 1)] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
+          pattern = [1, (1, float(len(shape)))] #Format currently follows: [number of parts, list of angles (each element is a list of angles pertaining to a single part)]
           for s1 in range(len(shape)):
-               relationSet = []
+               relationSet = [1]
                #Calculates the angle between any two lines (fix this to create a relation between curves)
                for s2 in range(len(shape)):
                     if s1 != s2:
-                         angle = math.atan(shape[s1][2])-math.atan(shape[s2][2])
+                         angle = abs(math.atan(shape[s1][2])-math.atan(shape[s2][2]))
                          len1 = (((shape[s1][0][0]-shape[s1][1][0])**2)+((shape[s1][0][1]-shape[s1][1][1])**2))**(1/2)
                          len2 = (((shape[s2][0][0]-shape[s2][1][0])**2)+((shape[s2][0][1]-shape[s2][1][1])**2))**(1/2)
                          relLength = abs(len1-len2)/len1
-                         relationSet.append([1, ((1, angle),(1, relLength))])
+                         relationSet.append([1, (1, angle),(1, relLength)])
                          
                pattern.append(relationSet)
 
