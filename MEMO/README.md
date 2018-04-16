@@ -9,6 +9,7 @@ MEmory MOdels (MEMO) contains the models used as the "memory" of the Learning AG
 3. ~~PatternAlign needs to account for different orders inside of each angleSet~~
 4. ~~Adjust shape analysis to store part distance relations~~
 5. ~~Look into making pattern analysis / alignments recursive~~
-6. Create a function that will handle the updating of the patterns (recursive?). Needs to handle weight changing.
+6. ~~Create a function that will handle the updating of the patterns (recursive?). Needs to handle weight changing.~~
 7. Create a more confident way to determine "completness" of analysis in analyzeImage()
 8. Look into ways to adjust model network to be more generalized and adaptable
+9. Merging patterns that are different returns incorrect values. Look into this.

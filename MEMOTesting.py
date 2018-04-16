@@ -31,3 +31,6 @@ def mergeTest():
 
      s1.updateChildren(tilt, "square")
      print("s1 Square Pattern After Merge: ", s1.children["square"].pattern)
+     print(s1.identifyImage(dataSet[2]))
+     print(s1.identifyImage(data))
+     
