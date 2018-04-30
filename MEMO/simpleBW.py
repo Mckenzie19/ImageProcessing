@@ -30,7 +30,7 @@ class SimpleBWImage(OOI):
      *setRelations: Given a list of parts (the "shape"), returns a pattern
      """
 
-     def __init__(self, identifier = None, pattern = None, parents = None, weight = 0, children = None, focus = 0.5, unityLimit = 0.9, proxRatio = 0.9):
+     def __init__(self, identifier = None, pattern = None, parents = None, weight = 0, children = None, focus = 0.5, unityLimit = 0.9, proxRatio = 0.8):
           """
           Description: Creates a SimpleBWImage object
 
@@ -62,7 +62,7 @@ class SimpleBWImage(OOI):
           
           imagePattern = self.analyzeImage(image)
           #print("Image Pattern (Identify Image): ", imagePattern)
-          bestRatio = 0.0
+          bestRatio = float('inf')
           bestChild = None
           #Determines which child best matches the pattern given
           for child in self.children:
@@ -75,7 +75,11 @@ class SimpleBWImage(OOI):
           if bestRatio <= (1-self.proxRatio):
                return bestChild, bestRatio
           else:
-               return None, 1.0
+               name = str(len(self.children))
+               self.updateChildren(image, name)
+               print("New Child: ", name)
+               print("New Pattern: ", self.children[name].pattern)
+               return 
 
 
      def updateChildren(self, image, childName):

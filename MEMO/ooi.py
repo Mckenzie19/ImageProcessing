@@ -47,6 +47,7 @@ class OOI(object):
           #print("\nPattern 1: ", patt1)
           #print("Pattern 2: ", patt2)
 
+
           if type(patt1) in [type(1.0), type(1)]: #Checks if the patterns contain nested tuples
 
                ratio = 0
@@ -69,6 +70,8 @@ class OOI(object):
                     totRatio = 0
                     totPerm = [((patt1[0]+patt2[0])/2)]
                     for i in range(len(testPerm)):
+                         if (i+1) > (len(patt2) - 1):
+                              return patt1, 1
                          if type(testPerm[i]) != type(patt2[i+1]):
                               totRatio = float('inf')
                               totPerm.append(testPerm)

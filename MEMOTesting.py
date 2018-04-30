@@ -1,6 +1,9 @@
+import numpy
 from testDataSquares import *
 from MEMO import *
+from testDataTriangles import *
 
+numpy.set_printoptions(threshold=numpy.nan)
 
 data = makeTestImage()
 s1 = SimpleBWImage()
@@ -16,6 +19,24 @@ def runTest2():
 
      for i in range(45, 50):
           print(s1.identifyImage(dataSet[i]))
+
+
+dSet, tilt = squareDataTest()
+def runTest3():
+     for i in range(0, 45):
+          s1.updateChildren(tilt, "square")
+
+     for i in range(45, 50):
+          print(s1.identifyImage(tilt))
+
+
+def runTest4():
+     for i in range(0, 45):
+          s1.updateChildren(tilt, "square")
+
+     for i in range(45, 50):
+          print(s1.identifyImage(dataSet[i]))
+
 
 def tiltTest():
      dSet, tilt = squareDataTest()
@@ -33,4 +54,28 @@ def mergeTest():
      print("s1 Square Pattern After Merge: ", s1.children["square"].pattern)
      print(s1.identifyImage(dataSet[2]))
      print(s1.identifyImage(data))
+
+
+tri = makeTriangleTest()
+
+def triangleTest():
+     print(s1.identifyImage(tri))
+     
+
+def makeTriChild():
+     s2.updateChildren(tri, "triangle")
+     print(s2.children["triangle"].pattern)
+     
+
+
+
+
+
+
+
+
+
+
+
+
      
