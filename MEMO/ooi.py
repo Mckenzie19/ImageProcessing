@@ -44,10 +44,6 @@ class OOI(object):
           *patt2: Second pattern to be analyzed
           """
 
-          #print("\nPattern 1: ", patt1)
-          #print("Pattern 2: ", patt2)
-
-
           if type(patt1) in [type(1.0), type(1)]: #Checks if the patterns contain nested tuples
 
                ratio = 0
@@ -66,18 +62,15 @@ class OOI(object):
                lowestRatio = float('inf')
                bestPerm = None
                for testPerm in itertools.permutations(patt1[1:]):
-                    #print("Permutation: ", testPerm)
                     totRatio = 0
-                    totPerm = [((patt1[0]+patt2[0])/2)]
+                    totPerm = [patt1[0]]
                     for i in range(len(testPerm)):
-                         if (i+1) > (len(patt2) - 1):
-                              return patt1, 1
-                         if type(testPerm[i]) != type(patt2[i+1]):
+                         if ((i+1) > (len(patt2) - 1)) or (type(testPerm[i]) != type(patt2[i+1])):
                               totRatio = float('inf')
                               totPerm.append(testPerm)
                               break
                          partPerm, partRatio = self.alignPatterns(testPerm[i], patt2[i+1])
-                         totRatio += partRatio
+                         totRatio += (patt1[0]*partRatio)
                          totPerm.append(partPerm)
 
                     averageRatio = totRatio/len(testPerm)

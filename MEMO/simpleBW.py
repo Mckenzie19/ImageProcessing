@@ -61,7 +61,6 @@ class SimpleBWImage(OOI):
           """
           
           imagePattern = self.analyzeImage(image)
-          #print("Image Pattern (Identify Image): ", imagePattern)
           bestRatio = float('inf')
           bestChild = None
           #Determines which child best matches the pattern given
@@ -103,8 +102,6 @@ class SimpleBWImage(OOI):
           else:
                self.children[childName].weight += 1 #Increases weight of pattern by 1
 
-               #print("\n\nImage Pattern (Update Children): ", imagePattern)
-               #print("Child Pattern (Update Children): ", self.children[childName].pattern)
                IMPatt, ratio = self.alignPatterns(imagePattern, self.children[childName].pattern)
                self.children[childName].pattern, ratio = self.updatePattern(self.children[childName].pattern, IMPatt)
 
@@ -113,8 +110,6 @@ class SimpleBWImage(OOI):
 
 
      def updatePattern(self, childPatt, IMPatt):
-          #print("\nChild Pattern: ", childPatt)
-          #print("Image Pattern: ", IMPatt)
 
           #Assuming childPatt type will match IMPatt type
           if type(childPatt[1]) in [type(1.0), type(1)]:
@@ -125,7 +120,7 @@ class SimpleBWImage(OOI):
                else:
                     agreement = 1 - abs((childPatt[1] - IMPatt[1])/IMPatt[1])
 
-               newWeight = ((childPatt[0]+IMPatt[0])/2)*(agreement)
+               newWeight = abs(((childPatt[0]+IMPatt[0])/2)*(agreement))
                newValue = (childPatt[1] + IMPatt[1])/2
 
                return (newWeight, newValue), agreement
@@ -137,8 +132,6 @@ class SimpleBWImage(OOI):
                     newVal, agreement = self.updatePattern(childPatt[val+1], IMPatt[val+1])
                     values.append(newVal)
                     totAgreement += agreement
-                    #print("Calculated Values: ", values)
-                    #print("Total Agreement: ", totAgreement)
 
                agreementRatio = totAgreement / len(values)
                newWeight = abs(((childPatt[0] + IMPatt[0])/2)*agreementRatio)
